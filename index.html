@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nauka Matematyki - Ułamki Dziesiętne</title>
+    <!-- Import Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Import MathJax do renderowania wzorów matematycznych -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <style>
+        /* Prosty styl dla przycisków opcji */
+        .option-btn {
+            @apply w-full bg-white border-2 border-blue-400 text-blue-800 p-4 rounded-lg text-lg font-semibold transition-all duration-200 hover:bg-blue-100 hover:border-blue-600;
+        }
+        .option-btn.selected {
+            @apply bg-blue-500 border-blue-700 text-white;
+        }
+        
+        /* Styl dla poprawnych i błędnych odpowiedzi w modal-u */
+        .feedback-correct {
+            @apply border-4 border-green-500 bg-green-50 rounded-lg p-4;
+        }
+        .feedback-incorrect {
+            @apply border-4 border-red-500 bg-red-50 rounded-lg p-4;
+        }
+
+        /* Ukrywanie elementów na start */
+        #quiz-screen, #summary-screen, #final-screen, #feedback-modal {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-blue-50 min-h-screen flex items-center justify-center font-sans p-4">
+
+    <div class="w-full max-w-2xl bg-white rounded-2xl shadow-2xl p-6 md:p-10">
+
+        <!-- 1. Ekran Startowy -->
+        <div id="start-screen" class="text-center">
+            <h1 class="text-3xl md:text-4xl font-bold text-blue-900 mb-4">Matematyka dla Klasy 6</h1>
+            <p class="text-xl text-gray-700 mb-8">Witaj! Zaczynamy naukę o <strong>działaniach na ułamkach dziesiętnych</strong>, bazując na Twoich materiałach.</p>
+            <button onclick="startApp()" class="w-full bg-blue-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                Rozpocznij Pierwszą Sekcję
+            </button>
+        </div>
+
+        <!-- 2. Ekran Quizu -->
+        <div id="quiz-screen">
+            <h2 id="section-title" class="text-2xl font-bold text-blue-900 mb-2"></h2>
+            <p id="progress-text" class="text-md text-gray-500 mb-4"></p>
+            
+            <!-- Pasek postępu -->
+            <div class="w-full bg-gray-200 rounded-full h-2.5 mb-6">
+                <div id="progress-bar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+
+            <div id="question-container">
+                <h3 id="question-text" class="text-2xl text-gray-900 mb-6 min-h-[50px]"></h3>
+                <div id="options-container" class="space-y-4">
+                    <!-- Opcje będą dodawane dynamicznie przez JS -->
+                </div>
+            </div>
+
+            <button onclick="checkAnswer()" id="check-btn" class="w-full mt-8 bg-green-600 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-green-700 transition-transform transform hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed" disabled>
+                Sprawdź
+            </button>
+        </div>
+
+        <!-- 3. Ekran Podsumowania Sekcji -->
+        <div id="summary-screen" class="text-center">
+            <h2 id="summary-title" class="text-3xl font-bold text-blue-900 mb-4"></h2>
+            <p id="summary-score" class="text-5xl font-bold text-gray-800 mb-6"></p>
+            <p id="summary-topic" class="text-lg text-gray-600 mb-8"></p>
+            <button id="next-section-btn" onclick="nextSection()" class="w-full bg-blue-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                <!-- Tekst przycisku ustawiany przez JS -->
+            </button>
+            
+            <!-- Gemini Feature: Generate Problem -->
+            <button id="gemini-generate-btn" onclick="generateWordProblem()" class="w-full mt-4 bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 disabled:bg-gray-400">
+                ✨ Wygeneruj nowe zadanie
+            </button>
+            <div id="gemini-problem-container" class="mt-4 p-4 bg-purple-50 border border-purple-300 rounded-lg text-left" style="display: none;">
+                <!-- Gemini-generated problem will appear here -->
+            </div>
+        </div>
+
+        <!-- 4. Ekran Podsumowania Końcowego -->
+        <div id="final-screen" class="text-center">
+            <h2 class="text-4xl font-bold text-blue-900 mb-4">Koniec! Świetna robota!</h2>
+            <p id="final-total-score" class="text-2xl text-gray-700 mb-8"></p>
+            
+            <div id="areas-to-review-container" class="text-left mb-8">
+                <h3 class="text-xl font-bold text-gray-800 mb-3">Obszary do poćwiczenia:</h3>
+                <ul id="areas-list" class="list-disc list-inside text-gray-700 space-y-1">
+                    <!-- Lista będzie wypełniona przez JS -->
+                </ul>
+            </div>
+
+            <button onclick="restartApp()" class="w-full bg-gray-600 text-white font-bold py-4 px-8 rounded-lg text-xl shadow-lg hover:bg-gray-700 transition-transform transform hover:scale-105">
+                Zacznij od nowa
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Modal z informacją zwrotną (Feedback) -->
+    <div id="feedback-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4">
+        <div class="w-full max-w-lg bg-white rounded-2xl shadow-2xl p-8 transform transition-all scale-95" id="feedback-content">
+            <h2 id="feedback-title" class="text-3xl font-bold mb-4 text-center"></h2>
+            <div id="feedback-explanation" class="text-lg text-gray-800 space-y-3">
+                <!-- Wyjaśnienie będzie dodane przez JS -->
+            </div>
+            <button onclick="nextQuestion()" class="w-full mt-8 bg-blue-600 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-blue-700 transition-transform transform hover:scale-105">
+                Dalej
+            </button>
+            
+            <!-- Gemini Feature: Explain Simpler -->
+            <button id="gemini-explain-btn" onclick="getSimplerExplanation()" class="w-full mt-4 bg-purple-600 text-white font-bold py-3 px-8 rounded-lg text-lg shadow-lg hover:bg-purple-700 transition-transform transform hover:scale-105 disabled:bg-gray-400">
+                ✨ Wyjaśnij mi to prościej
+            </button>
+            <div id="gemini-explanation-container" class="mt-4 p-4 bg-purple-50 border border-purple-300 rounded-lg" style="display: none;">
+                <!-- Gemini explanation will appear here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        // --- Baza Danych Quizu ---
+        const quizData = [
+            {
+                sectionTitle: "Część 1: Dodawanie i Odejmowanie Ułamków Dziesiętnych",
+                nextSectionTopic: "Mnożenie Ułamków Dziesiętnych",
+                questions: [
+                    {
+                        question: "Oblicz w pamięci: $0,5 + 0,3$",
+                        options: ["0,8", "0,08", "8,0", "0,53"],
+                        correctAnswer: "0,8",
+                        explanation: "Dodajemy cyfry na pierwszym miejscu po przecinku (cyfry części dziesiątych): 5 + 3 = 8. Wynik to 0,8."
+                    },
+                    {
+                        question: "Oblicz w pamięci: $1,0 - 0,2$",
+                        options: ["1,2", "0,8", "1,8", "0,08"],
+                        correctAnswer: "0,8",
+                        explanation: "To tak jak $10 - 2 = 8$. Musimy pamiętać, że to części dziesiąte, więc wynik to 0,8."
+                    },
+                    {
+                        question: "Oblicz: $4,25 + 2,7$",
+                        options: ["4,52", "6,32", "6,95", "4,32"],
+                        correctAnswer: "6,95",
+                        explanation: "Przy dodawaniu pisemnym musimy ustawić liczby tak, aby przecinek był pod przecinkiem. Puste miejsca możemy uzupełnić zerami.",
+                        visualExplanation: `
+                            <p>Ustawiamy liczby przecinek pod przecinkiem:</p>
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+  4,25
++ 2,7<span class="text-blue-500 font-bold">0</span>  <- Tu dopisujemy zero
+-------
+  6,95
+                            </pre>
+                        `
+                    },
+                    {
+                        question: "Oblicz: $15,5 - 3,18$",
+                        options: ["12,48", "12,32", "11,42", "12,42"],
+                        correctAnswer: "12,32",
+                        explanation: "Podobnie jak przy dodawaniu, ustawiamy przecinek pod przecinkiem i 'pożyczamy' z następnej cyfry, jeśli to konieczne.",
+                        visualExplanation: `
+                            <p>Ustawiamy liczby i dopisujemy zero:</p>
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+  15,5<span class="text-blue-500 font-bold">0</span>
+-  3,18
+-------
+  12,32
+                            </pre>
+                            <p>Obliczamy: 0 - 8 (pożyczamy z 5) -> 10 - 8 = 2. Dalej (zostało 4) 4 - 1 = 3. Dalej 15 - 3 = 12.</p>
+                        `
+                    },
+                    {
+                        question: "Ania kupiła chleb za $3,70$ zł i masło za $6,50$ zł. Ile reszty otrzymała z banknotu $20$ zł?",
+                        options: ["$9,80$ zł", "$10,20$ zł", "$13,50$ zł", "$10,80$ zł"],
+                        correctAnswer: "$9,80$ zł",
+                        explanation: "Najpierw liczymy, ile Ania zapłaciła: $3,70 + 6,50 = 10,20$ zł. Następnie odejmujemy to od 20 zł: $20,00 - 10,20 = 9,80$ zł.",
+                        visualExplanation: `
+                            <p>1. Suma zakupów:</p>
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+  3,70
++ 6,50
+-------
+ 10,20 zł
+                            </pre>
+                            <p>2. Reszta:</p>
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+  20,00
+- 10,20
+-------
+   9,80 zł
+                            </pre>
+                        `
+                    }
+                ]
+            },
+            {
+                sectionTitle: "Część 2: Mnożenie Ułamków Dziesiętnych",
+                nextSectionTopic: "Dzielenie Ułamków Dziesiętnych",
+                questions: [
+                    {
+                        question: "Oblicz: $0,8 \\cdot 100$",
+                        options: ["0,08", "8", "80", "800"],
+                        correctAnswer: "80",
+                        explanation: "Mnożąc przez 100 (które ma 2 zera), przesuwamy przecinek o 2 miejsca w prawo.",
+                        visualExplanation: `
+                            <p class="text-lg font-mono">
+                                $0,8 \cdot 100 = 0,8\\underline{\hspace{0.2em}}\\underline{\hspace{0.2em}} \rightarrow 80$
+                            </p>
+                            <p>Przesuwamy przecinek o 2 miejsca w prawo. Puste miejsce uzupełniamy zerem.</p>
+                        `
+                    },
+                    {
+                        question: "Oblicz: $0,5 \\cdot 0,3$",
+                        options: ["1,5", "0,15", "0,015", "15"],
+                        correctAnswer: "0,15",
+                        explanation: "Mnożymy $5 \\cdot 3 = 15$. Następnie liczymy miejsca po przecinku w obu liczbach (w 0,5 jest jedno, w 0,3 jest jedno, łącznie 1+1=2). W wyniku (15) musimy mieć 2 miejsca po przecinku, stąd 0,15."
+                    },
+                    {
+                        question: "Oblicz: $1,2 \\cdot 0,4$",
+                        options: ["4,8", "0,48", "0,048", "48"],
+                        correctAnswer: "0,48",
+                        explanation: "Mnożymy $12 \\cdot 4 = 48$. W obu liczbach łącznie są 2 miejsca po przecinku (jedno w 1,2 i jedno w 0,4). Dlatego wynik to 0,48."
+                    },
+                    {
+                        question: "Oblicz: $(0,2)^2$",
+                        options: ["0,4", "0,04", "0,004", "4"],
+                        correctAnswer: "0,04",
+                        explanation: "To jest to samo co $0,2 \\cdot 0,2$. Mnożymy $2 \\cdot 2 = 4$. Łącznie mamy 2 miejsca po przecinku, więc wynik to 0,04.",
+                        visualExplanation: `
+                            <p>$0,2^2 = 0,2 \cdot 0,2$</p>
+                            <p>$2 \cdot 2 = 4$</p>
+                            <p>Liczba miejsc po przecinku: 1 + 1 = 2</p>
+                            <p>Wynik: $0,04$</p>
+                        `
+                    },
+                    {
+                        question: "Ile kosztuje $4,5$ kg jabłek, jeśli $1$ kg kosztuje $3,50$ zł?",
+                        options: ["$15,75$ zł", "$14,75$ zł", "$15,25$ zł", "$14,50$ zł"],
+                        correctAnswer: "$15,75$ zł",
+                        explanation: "Musimy pomnożyć $4,5 \\cdot 3,50$. Najłatwiej zrobić to pisemnie.",
+                        visualExplanation: `
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+  4,5   (1 miejsce po przecinku)
+x 3,5   (1 miejsce po przecinku)
+-----
+  225
++1350
+-----
+ 15,75  (1+1 = 2 miejsca po przecinku)
+                            </pre>
+                            <p>Koszt to 15,75 zł.</p>
+                        `
+                    }
+                ]
+            },
+            {
+                sectionTitle: "Część 3: Dzielenie Ułamków Dziesiętnych",
+                nextSectionTopic: "Zamiana Jednostek",
+                questions: [
+                    {
+                        question: "Oblicz: $72,4 : 10$",
+                        options: ["724", "7,24", "0,724", "7240"],
+                        correctAnswer: "7,24",
+                        explanation: "Dzieląc przez 10 (które ma 1 zero), przesuwamy przecinek o 1 miejsce w lewo.",
+                        visualExplanation: `
+                            <p class="text-lg font-mono">
+                                $72,4 : 10 = 7,24$
+                            </p>
+                            <p>Przesuwamy przecinek o 1 miejsce w lewo.</p>
+                        `
+                    },
+                    {
+                        question: "Oblicz: $7,2 : 8$",
+                        options: ["9", "0,9", "0,09", "1,1"],
+                        correctAnswer: "0,9",
+                        explanation: "Dzielimy $72 : 8 = 9$. Ponieważ w $7,2$ było jedno miejsce po przecinku, w wyniku też musi być jedno. Dzielimy pisemnie, stawiając przecinek nad przecinkiem."
+                    },
+                    {
+                        question: "Oblicz: $6,4 : 0,2$",
+                        options: ["3,2", "0,32", "32", "320"],
+                        correctAnswer: "32",
+                        explanation: "Nie możemy dzielić przez ułamek. Musimy przesunąć przecinek w obu liczbach tak, aby dzielnik (0,2) stał się liczbą całkowitą (2).",
+                        visualExplanation: `
+                            <p>$6,4 : 0,2 = ?$</p>
+                            <p>Przesuwamy przecinek w obu liczbach o 1 miejsce w prawo:</p>
+                            <p>$6,4 \rightarrow 64$</p>
+                            <p>$0,2 \rightarrow 2$</p>
+                            <p>Teraz to proste działanie: $64 : 2 = 32$</p>
+                        `
+                    },
+                    {
+                        question: "Oblicz: $5 : 0,05$",
+                        options: ["100", "10", "1", "0,1"],
+                        correctAnswer: "100",
+                        explanation: "Przesuwamy przecinek w obu liczbach o 2 miejsca w prawo, aby dzielnik (0,05) stał się liczbą całkowitą (5).",
+                        visualExplanation: `
+                            <p>$5 : 0,05 = ?$</p>
+                            <p>W liczbie 5 przecinek jest na końcu: $5,00$</p>
+                            <p>Przesuwamy przecinki o 2 miejsca w prawo:</p>
+                            <p>$5,00 \rightarrow 500$</p>
+                            <p>$0,05 \rightarrow 5$</p>
+                            <p>Nowe działanie: $500 : 5 = 100$</p>
+                        `
+                    },
+                    {
+                        question: "Wstążkę o długości $10,5$ metra pocięto na $30$ równych kawałków. Jaką długość ma jeden kawałek?",
+                        options: ["$3,5$ m", "$0,35$ m", "$35$ m", "$0,035$ m"],
+                        correctAnswer: "$0,35$ m",
+                        explanation: "Dzielimy $10,5 : 30$. To to samo co $10,5 : 10 : 3$.",
+                        visualExplanation: `
+                            <p>Dzielimy $10,5 : 30$.</p>
+                            <p>Można to zrobić tak: $10,5 : 10 = 1,05$.</p>
+                            <p>Następnie $1,05 : 3 = 0,35$.</p>
+                            <p>Albo pisemnie (pamiętaj, aby postawić przecinek w wyniku nad przecinkiem dzielnej):</p>
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+    0,35
+  -----
+  10,5 : 30
+-  0
+ -----
+  10 5
+-  9 0
+ -----
+   1 50
+-  1 50
+ -----
+      0
+                            </pre>
+                        `
+                    }
+                ]
+            },
+            {
+                sectionTitle: "Część 4: Zamiana Jednostek",
+                nextSectionTopic: "Ułamki Zwykłe i Dziesiętne",
+                questions: [
+                    {
+                        question: "Zapisz w metrach: $125$ cm",
+                        options: ["$12,5$ m", "$1,25$ m", "$0,125$ m", "$1250$ m"],
+                        correctAnswer: "$1,25$ m",
+                        explanation: "1 metr ma 100 centymetrów, więc aby zamienić cm na m, musimy podzielić przez 100 (przesunąć przecinek o 2 miejsca w lewo). $125,0 \rightarrow 1,25$."
+                    },
+                    {
+                        question: "Zapisz w kilogramach: $50$ g",
+                        options: ["$0,5$ kg", "$0,05$ kg", "$0,005$ kg", "$5$ kg"],
+                        correctAnswer: "$0,05$ kg",
+                        explanation: "1 kilogram ma 1000 gramów. Aby zamienić g na kg, dzielimy przez 1000 (przesuwamy przecinek o 3 miejsca w lewo). $50,0 \rightarrow 0,050$, czyli $0,05$ kg."
+                    },
+                    {
+                        question: "Zapisz jako wyrażenie dwumianowane: $8,04$ kg",
+                        options: ["8 kg 4 g", "8 kg 400 g", "8 kg 40 g", "80 kg 4 g"],
+                        correctAnswer: "8 kg 40 g",
+                        explanation: "Część całkowita to kilogramy (8 kg). Część ułamkowa $0,04$ kg to gramy. Ponieważ 1 kg = 1000 g, mnożymy $0,04 \\cdot 1000 = 40$ g. Razem 8 kg 40 g."
+                    },
+                    {
+                        question: "Zapisz w centymetrach: $2$ cm $3$ mm",
+                        options: ["$2,3$ cm", "$2,03$ cm", "$23$ cm", "$0,23$ cm"],
+                        correctAnswer: "$2,3$ cm",
+                        explanation: "1 centymetr ma 10 milimetrów. Więc 3 mm to $3/10$ centymetra, czyli $0,3$ cm. Razem $2 + 0,3 = 2,3$ cm."
+                    },
+                    {
+                        question: "Obwód prostokąta o bokach $0,5$ m i $25$ cm wynosi:",
+                        options: ["$1,5$ m", "$75$ cm", "$150$ m", "$1,0$ m"],
+                        correctAnswer: "$1,5$ m",
+                        explanation: "Najpierw musimy zamienić jednostki, aby były takie same. $25$ cm $= 0,25$ m. Obwód to $2 \\cdot (a+b)$.",
+                        visualExplanation: `
+                            <p>Bok a = $0,5$ m</p>
+                            <p>Bok b = $25$ cm $= 0,25$ m</p>
+                            <p>Obwód = $2 \cdot (0,5 + 0,25)$</p>
+                            <p>$0,5 + 0,25 = 0,75$ m</p>
+                            <p>$2 \cdot 0,75 = 1,5$ m</p>
+                            <p>Obwód wynosi 1,5 metra.</p>
+                        `
+                    }
+                ]
+            },
+            {
+                sectionTitle: "Część 5: Rozwinięcia Dziesiętne Ułamków Zwykłych",
+                nextSectionTopic: "Koniec!",
+                questions: [
+                    {
+                        question: "Zamień na ułamek dziesiętny: $\\frac{1}{2}$",
+                        options: ["0,2", "0,1", "0,5", "0,05"],
+                        correctAnswer: "0,5",
+                        explanation: "Rozszerzamy ułamek tak, aby w mianowniku było 10, 100 lub 1000. $\\frac{1}{2} = \\frac{1 \cdot 5}{2 \cdot 5} = \\frac{5}{10} = 0,5$."
+                    },
+                    {
+                        question: "Zamień na ułamek dziesiętny: $\\frac{3}{4}$",
+                        options: ["0,34", "0,3", "0,75", "0,43"],
+                        correctAnswer: "0,75",
+                        explanation: "Rozszerzamy mianownik do 100. $\\frac{3}{4} = \\frac{3 \cdot 25}{4 \cdot 25} = \\frac{75}{100} = 0,75$."
+                    },
+                    {
+                        question: "Zamień na ułamek dziesiętny: $\\frac{1}{8}$",
+                        options: ["0,125", "0,18", "0,8", "1,8"],
+                        correctAnswer: "0,125",
+                        explanation: "Dzielimy pisemnie $1 : 8$ lub rozszerzamy mianownik do 1000. $\\frac{1}{8} = \\frac{1 \cdot 125}{8 \cdot 125} = \\frac{125}{1000} = 0,125$."
+                    },
+                    {
+                        question: "Jakie jest rozwinięcie dziesiętne ułamka $\\frac{1}{3}$?",
+                        options: ["0,3", "0,33", "0,(3)", "0,13"],
+                        correctAnswer: "0,(3)",
+                        explanation: "Tego ułamka nie da się rozszerzyć do mianownika 10 lub 100. Dzieląc $1 : 3$ pisemnie, otrzymujemy $0,3333...$. Nazywamy to ułamkiem okresowym i zapisujemy $0,(3)$."
+                    },
+                    {
+                        question: "Która liczba jest większa: $0,(6)$ czy $0,6$? ",
+                        options: ["$0,(6)$", "$0,6$", "Są równe"],
+                        correctAnswer: "$0,(6)$",
+                        explanation: "$0,(6)$ to $0,66666...$, natomiast $0,6$ to $0,60000...$. Porównując cyfry na drugim miejscu po przecinku (6 i 0), widzimy, że $6 > 0$, więc $0,(6)$ jest większe.",
+                        visualExplanation: `
+                            <p>$0,(6) = 0,6<span class="text-red-500 font-bold">6</span>66...$</p>
+                            <p>$0,6 = 0,6<span class="text-blue-500 font-bold">0</span>00...$</p>
+                            <p>Cyfra 6 jest większa od 0, dlatego $0,(6) > 0,6$</p>
+                        `
+                    }
+                ]
+            }
+        ];
+
+        // --- Gemini API ---
+        const API_KEY = ""; // Zgodnie z instrukcją, puste
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${API_KEY}`;
+
+        /**
+         * Helper sleep function for exponential backoff.
+         */
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        /**
+         * Calls the Gemini API with exponential backoff.
+         * @param {string} prompt The prompt to send to the API.
+         * @returns {Promise<string>} The text response from the API.
+         */
+        async function callGeminiAPI(prompt) {
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+            };
+
+            let retries = 5;
+            let delay = 1000;
+
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        // Nie logujemy błędów serwera jako błędy konsoli, zgodnie z instrukcją
+                        if (response.status >= 500) { 
+                            // Cicha próba ponowienia dla błędów serwera
+                        } else {
+                            console.error(`HTTP error! status: ${response.status}`);
+                        }
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    
+                    if (result.candidates && result.candidates[0].content && result.candidates[0].content.parts[0].text) {
+                        return result.candidates[0].content.parts[0].text;
+                    } else {
+                        throw new Error("Invalid API response structure.");
+                    }
+
+                } catch (error) {
+                    // console.error("Gemini API call failed:", error); // Zgodnie z instrukcją, nie logujemy ponowień
+                    if (i < retries - 1) {
+                        // console.log(`Retrying in ${delay}ms...`); // Nie logujemy ponowień
+                        await sleep(delay);
+                        delay *= 2; // Exponential backoff
+                    } else {
+                        return "Przepraszam, mam problem z połączeniem. Spróbuj ponownie za chwilę.";
+                    }
+                }
+            }
+            return "Przepraszam, nie udało się uzyskać odpowiedzi.";
+        }
+        // --- End Gemini API ---
+
+
+        // --- Logika Aplikacji ---
+        let currentSectionIndex = 0;
+        let currentQuestionIndex = 0;
+        let sectionScore = 0;
+        let scores = []; // Przechowuje wyniki dla każdej sekcji
+        let currentExplanation = ""; // Przechowuje aktualne wyjaśnienie dla Gemini
+        let selectedAnswer = null;
+
+        // Elementy DOM
+        const startScreen = document.getElementById('start-screen');
+        const quizScreen = document.getElementById('quiz-screen');
+        const summaryScreen = document.getElementById('summary-screen');
+        const finalScreen = document.getElementById('final-screen');
+        const feedbackModal = document.getElementById('feedback-modal');
+        const feedbackContent = document.getElementById('feedback-content');
+
+        const sectionTitle = document.getElementById('section-title');
+        const progressText = document.getElementById('progress-text');
+        const progressBar = document.getElementById('progress-bar');
+        const questionText = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const checkBtn = document.getElementById('check-btn');
+
+        // Funkcja renderująca MathJax
+        function typesetMath() {
+            if (window.MathJax) {
+                window.MathJax.typesetPromise().catch((err) => console.log('MathJax typeset failed: ', err));
+            }
+        }
+
+        function startApp() {
+            currentSectionIndex = 0;
+            currentQuestionIndex = 0;
+            scores = [];
+            startScreen.style.display = 'none';
+            finalScreen.style.display = 'none';
+            summaryScreen.style.display = 'none';
+            quizScreen.style.display = 'block';
+            loadSection();
+        }
+
+        function loadSection() {
+            const section = quizData[currentSectionIndex];
+            sectionScore = 0;
+            currentQuestionIndex = 0;
+            
+            sectionTitle.textContent = section.sectionTitle;
+            
+            // Zapisz wynik poprzedniej sekcji, jeśli istnieje
+            if (currentSectionIndex > 0) {
+                const prevSection = quizData[currentSectionIndex - 1];
+                scores.push({
+                    title: prevSection.sectionTitle,
+                    score: sectionScore, // Błąd logiczny: sectionScore jest resetowane. Powinno być zapisane PRZED resetem
+                    // Poprawka: zapis wyniku przeniesiony do showSectionSummary
+                });
+            }
+            
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            selectedAnswer = null;
+            checkBtn.disabled = true;
+
+            const section = quizData[currentSectionIndex];
+            const question = section.questions[currentQuestionIndex];
+            
+            // Aktualizuj postęp
+            const progressPercent = ((currentQuestionIndex) / section.questions.length) * 100;
+            progressBar.style.width = `${progressPercent}%`;
+            progressText.textContent = `Pytanie ${currentQuestionIndex + 1} / ${section.questions.length}`;
+
+            // Załaduj pytanie i opcje
+            questionText.textContent = question.question;
+            optionsContainer.innerHTML = '';
+            
+            question.options.forEach(optionText => {
+                const button = document.createElement('button');
+                button.className = 'option-btn';
+                button.textContent = optionText;
+                button.onclick = () => selectOption(button, optionText);
+                optionsContainer.appendChild(button);
+            });
+            
+            typesetMath();
+        }
+
+        function selectOption(button, optionText) {
+            // Odznacz wszystkie inne
+            Array.from(optionsContainer.children).forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Zaznacz kliknięty
+            button.classList.add('selected');
+            selectedAnswer = optionText;
+            checkBtn.disabled = false;
+        }
+
+        function checkAnswer() {
+            const section = quizData[currentSectionIndex];
+            const question = section.questions[currentQuestionIndex];
+
+            const feedbackTitle = document.getElementById('feedback-title');
+            const feedbackExplanation = document.getElementById('feedback-explanation');
+            
+            // Gemini elements
+            const geminiBtn = document.getElementById('gemini-explain-btn');
+            const geminiContainer = document.getElementById('gemini-explanation-container');
+            
+            // Reset Gemini state
+            geminiContainer.style.display = 'none';
+            geminiContainer.innerHTML = '';
+            geminiBtn.disabled = false;
+            geminiBtn.textContent = "✨ Wyjaśnij mi to prościej";
+            currentExplanation = ""; // Reset
+            
+            let isCorrect = selectedAnswer === question.correctAnswer;
+            
+            if (isCorrect) {
+                sectionScore++;
+                feedbackTitle.textContent = "Brawo, poprawna odpowiedź!";
+                feedbackExplanation.innerHTML = `<div class="feedback-correct">${question.explanation}</div>`;
+                geminiBtn.style.display = 'none'; // Ukryj przycisk Gemini przy poprawnej odpowiedzi
+            } else {
+                feedbackTitle.textContent = "Niestety, spróbujmy jeszcze raz";
+                // Zapisz wyjaśnienie dla Gemini
+                currentExplanation = question.visualExplanation ? question.visualExplanation : question.explanation;
+
+                let explanationHTML = `
+                    <div class="feedback-incorrect">
+                        <p><strong>Twoja odpowiedź:</strong> ${selectedAnswer}</p>
+                        <p><strong>Poprawna odpowiedź:</strong> ${question.correctAnswer}</p>
+                        <hr class="my-3 border-gray-300">
+                        <p class="font-bold">Wyjaśnienie:</p>
+                        ${currentExplanation}
+                    </div>
+                `;
+                feedbackExplanation.innerHTML = explanationHTML;
+                geminiBtn.style.display = 'block'; // Pokaż przycisk Gemini przy błędnej odpowiedzi
+            }
+            
+            feedbackModal.style.display = 'flex';
+            
+            // Przeskaluj modal dla efektu "pojawienia się"
+            setTimeout(() => {
+                feedbackContent.style.transform = 'scale(1)';
+            }, 10);
+            
+            typesetMath();
+        }
+
+        function nextQuestion() {
+            // Ukryj modal
+            feedbackContent.style.transform = 'scale(0.95)';
+            feedbackModal.style.display = 'none';
+
+            currentQuestionIndex++;
+            const section = quizData[currentSectionIndex];
+
+            if (currentQuestionIndex < section.questions.length) {
+                loadQuestion();
+            } else {
+                // Koniec sekcji
+                showSectionSummary();
+            }
+        }
+
+        function showSectionSummary() {
+            const section = quizData[currentSectionIndex];
+            
+            // Zapisz wynik sekcji
+            scores.push({
+                title: section.sectionTitle,
+                score: sectionScore,
+                total: section.questions.length
+            });
+            
+            quizScreen.style.display = 'none';
+            summaryScreen.style.display = 'block';
+
+            // Reset Gemini problem generator
+            const problemBtn = document.getElementById('gemini-generate-btn');
+            const problemContainer = document.getElementById('gemini-problem-container');
+            if (problemBtn) { // Sprawdź czy element istnieje
+                problemBtn.disabled = false;
+                problemBtn.textContent = "✨ Wygeneruj nowe zadanie";
+            }
+            if (problemContainer) {
+                problemContainer.style.display = 'none';
+                problemContainer.innerHTML = '';
+            }
+
+            document.getElementById('summary-title').textContent = `Podsumowanie: ${section.sectionTitle}`;
+            document.getElementById('summary-score').textContent = `${sectionScore} / ${section.questions.length}`;
+            
+            const nextSectionBtn = document.getElementById('next-section-btn');
+            
+            if (currentSectionIndex < quizData.length - 1) {
+                document.getElementById('summary-topic').textContent = `W następnej części zajmiemy się tematem: ${section.nextSectionTopic}`;
+                nextSectionBtn.textContent = `Przejdź do: ${section.nextSectionTopic}`;
+            } else {
+                document.getElementById('summary-topic').textContent = "To była ostatnia część. Gratulacje!";
+                nextSectionBtn.textContent = "Zobacz wyniki końcowe";
+            }
+        }
+
+        function nextSection() {
+            summaryScreen.style.display = 'none';
+            
+            // Ukryj kontener Gemini
+            const problemContainer = document.getElementById('gemini-problem-container');
+            if (problemContainer) {
+                problemContainer.style.display = 'none';
+            }
+
+            currentSectionIndex++;
+
+            if (currentSectionIndex < quizData.length) {
+                quizScreen.style.display = 'block';
+                loadSection();
+            } else {
+                showFinalSummary();
+            }
+        }
+
+        function showFinalSummary() {
+            finalScreen.style.display = 'block';
+            summaryScreen.style.display = 'none';
+
+            let totalScore = 0;
+            let maxScore = 0;
+            const areasList = document.getElementById('areas-list');
+            areasList.innerHTML = ''; // Wyczyść listę
+
+            let hasAreasToReview = false;
+
+            scores.forEach(result => {
+                totalScore += result.score;
+                maxScore += result.total;
+                
+                // Sprawdź, czy wynik jest poniżej 80% (np. mniej niż 4/5)
+                if (result.score / result.total < 0.8) {
+                    const li = document.createElement('li');
+                    li.textContent = `${result.title} (Wynik: ${result.score}/${result.total})`;
+                    areasList.appendChild(li);
+                    hasAreasToReview = true;
+                }
+            });
+
+            if (!hasAreasToReview) {
+                document.getElementById('areas-to-review-container').innerHTML = '<p class="text-lg text-green-700 font-semibold">Świetnie! We wszystkich sekcjach masz wysoki wynik. Nie ma obszarów wymagających pilnej powtórki.</p>';
+            }
+
+            document.getElementById('final-total-score').textContent = `Twój łączny wynik to: ${totalScore} / ${maxScore} punktów.`;
+        }
+
+        function restartApp() {
+            finalScreen.style.display = 'none';
+            
+            // Ukryj kontener Gemini
+            const problemContainer = document.getElementById('gemini-problem-container');
+            if (problemContainer) {
+                problemContainer.style.display = 'none';
+            }
+            
+            startScreen.style.display = 'block';
+        }
+
+        /**
+         * NEW: Calls Gemini to get a simpler explanation.
+         */
+        async function getSimplerExplanation() {
+            const geminiBtn = document.getElementById('gemini-explain-btn');
+            const geminiContainer = document.getElementById('gemini-explanation-container');
+
+            geminiBtn.disabled = true;
+            geminiBtn.textContent = "Myślę...";
+            geminiContainer.style.display = 'block';
+            geminiContainer.innerHTML = '<p class="text-center text-gray-600">Generowanie wyjaśnienia...</p>';
+
+            const systemPrompt = "Jesteś przyjaznym i cierpliwym nauczycielem matematyki. Rozmawiasz z uczniem 6. klasy, który nie zrozumiał poniższego wyjaśnienia. Przekaż mu tę samą wiedzę, ale w znacznie prostszy sposób. Używaj prostych słów, krótkich zdań i, jeśli to możliwe, analogii do codziennego życia. Nie powtarzaj tego, co już zostało napisane, ale stwórz nowe, łatwiejsze do zrozumienia tłumaczenie. Mów bezpośrednio do ucznia (np. 'Pomyśl o tym tak...').";
+            const userPrompt = `Oto wyjaśnienie, którego nie rozumiem:\n\n"${currentExplanation}"\n\nWyjaśnij mi to prościej.`;
+            
+            const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+
+            const simplerExplanation = await callGeminiAPI(fullPrompt);
+            
+            // Proste formatowanie (zamiana nowych linii na <br>)
+            const formattedExplanation = simplerExplanation
+                .replace(/\n/g, '<br>')
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Podstawowe pogrubienie
+
+            geminiContainer.innerHTML = formattedExplanation;
+            geminiBtn.style.display = 'none'; // Ukryj przycisk po użyciu
+        }
+
+        /**
+         * NEW: Calls Gemini to generate a new word problem.
+         */
+        async function generateWordProblem() {
+            const section = quizData[currentSectionIndex];
+            const problemBtn = document.getElementById('gemini-generate-btn');
+            const problemContainer = document.getElementById('gemini-problem-container');
+
+            problemBtn.disabled = true;
+            problemBtn.textContent = "Myślę...";
+            problemContainer.style.display = 'block';
+            problemContainer.innerHTML = '<p class="text-center text-gray-600">Generowanie zadania...</p>';
+
+            const prompt = `Jesteś nauczycielem matematyki w 6. klasie. Stwórz jedno krótkie zadanie tekstowe (2-4 zdania) dla ucznia, które dotyczy tematu: "${section.sectionTitle}". Zadanie powinno być praktyczne i zrozumiałe dla 12-latka. Na samym końcu, w nowej linii, podaj rozwiązanie poprzedzone słowem "Rozwiązanie:".`;
+
+            const problemText = await callGeminiAPI(prompt);
+
+            // Proste formatowanie
+            const formattedProblem = problemText
+                .replace(/\n/g, '<br>')
+                .replace(/Rozwiązanie:/g, '<br><br><strong>Rozwiązanie:</strong>');
+
+            problemContainer.innerHTML = formattedProblem;
+            // Pozwól na generowanie kolejnych
+            problemBtn.disabled = false;
+            problemBtn.textContent = "✨ Wygeneruj kolejne zadanie";
+        }
+
+    </script>
+
+</body>
+</html>
