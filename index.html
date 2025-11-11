@@ -9,6 +9,19 @@
     
     <!-- Import MathJax do renderowania wzorów matematycznych -->
     <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    
+    <!-- Konfiguracja MathJax, aby rozpoznawał $...$ jako wzory -->
+    <script>
+      MathJax = {
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']]
+        },
+        svg: {
+          fontCache: 'global'
+        }
+      };
+    </script>
+    
     <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 
     <style>
@@ -142,46 +155,15 @@
                         explanation: "Dodajemy cyfry na pierwszym miejscu po przecinku (cyfry części dziesiątych): 5 + 3 = 8. Wynik to 0,8."
                     },
                     {
-                        question: "Oblicz w pamięci: $1,0 - 0,2$",
-                        options: ["1,2", "0,8", "1,8", "0,08"],
-                        correctAnswer: "0,8",
-                        explanation: "To tak jak $10 - 2 = 8$. Musimy pamiętać, że to części dziesiąte, więc wynik to 0,8."
+                        question: "Oblicz w pamięci: $1,4 + 0,25$",
+                        options: ["1,65", "1,425", "1,065", "1,55"],
+                        correctAnswer: "1,65",
+                        explanation: "Dodajemy części całkowite (1+0=1), potem części dziesiętne (4+2=6) i setne (0+5=5). Razem 1,65."
                     },
                     {
-                        question: "Oblicz: $4,25 + 2,7$",
-                        options: ["4,52", "6,32", "6,95", "4,32"],
-                        correctAnswer: "6,95",
-                        explanation: "Przy dodawaniu pisemnym musimy ustawić liczby tak, aby przecinek był pod przecinkiem. Puste miejsca możemy uzupełnić zerami.",
-                        visualExplanation: `
-                            <p>Ustawiamy liczby przecinek pod przecinkiem:</p>
-                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
-  4,25
-+ 2,7<span class="text-blue-500 font-bold">0</span>  <- Tu dopisujemy zero
--------
-  6,95
-                            </pre>
-                        `
-                    },
-                    {
-                        question: "Oblicz: $15,5 - 3,18$",
-                        options: ["12,48", "12,32", "11,42", "12,42"],
-                        correctAnswer: "12,32",
-                        explanation: "Podobnie jak przy dodawaniu, ustawiamy przecinek pod przecinkiem i 'pożyczamy' z następnej cyfry, jeśli to konieczne.",
-                        visualExplanation: `
-                            <p>Ustawiamy liczby i dopisujemy zero:</p>
-                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
-  15,5<span class="text-blue-500 font-bold">0</span>
--  3,18
--------
-  12,32
-                            </pre>
-                            <p>Obliczamy: 0 - 8 (pożyczamy z 5) -> 10 - 8 = 2. Dalej (zostało 4) 4 - 1 = 3. Dalej 15 - 3 = 12.</p>
-                        `
-                    },
-                    {
-                        question: "Ania kupiła chleb za $3,70$ zł i masło za $6,50$ zł. Ile reszty otrzymała z banknotu $20$ zł?",
-                        options: ["$9,80$ zł", "$10,20$ zł", "$13,50$ zł", "$10,80$ zł"],
-                        correctAnswer: "$9,80$ zł",
+                        question: "Ania kupiła chleb za 3,70 zł i masło za 6,50 zł. Ile reszty otrzymała z banknotu 20 zł?",
+                        options: ["9,80 zł", "10,20 zł", "13,50 zł", "10,80 zł"],
+                        correctAnswer: "9,80 zł",
                         explanation: "Najpierw liczymy, ile Ania zapłaciła: $3,70 + 6,50 = 10,20$ zł. Następnie odejmujemy to od 20 zł: $20,00 - 10,20 = 9,80$ zł.",
                         visualExplanation: `
                             <p>1. Suma zakupów:</p>
@@ -199,6 +181,20 @@
    9,80 zł
                             </pre>
                         `
+                    },
+                    {
+                        question: "Oblicz sposobem pisemnym: $28,75 - 9,2$",
+                        options: ["19,55", "19,5", "27,55", "19,25"],
+                        correctAnswer: "19,55",
+                        explanation: "Podpisujemy przecinek pod przecinkiem. W odjemniku (9,2) możemy dopisać zero na końcu (9,20), aby ułatwić odejmowanie. $28,75 - 9,20 = 19,55$.",
+                        visualExplanation: "<pre class='text-left text-lg p-4 bg-gray-100 rounded-lg font-mono'>  28,75\n-  9,20\n-------\n  19,55</pre>"
+                    },
+                    {
+                        question: "Oblicz: $60 - 31,58$",
+                        options: ["28,42", "29,42", "28,52", "39,42"],
+                        correctAnswer: "28,42",
+                        explanation: "Do 60 dopisujemy przecinek i zera (60,00), aby móc odjąć pisemnie. Potem 'pożyczamy' od 60, aby móc odejmować.",
+                        visualExplanation: "<pre class='text-left text-lg p-4 bg-gray-100 rounded-lg font-mono'>  60,00\n- 31,58\n-------\n  28,42</pre>"
                     }
                 ]
             },
@@ -219,33 +215,64 @@
                         `
                     },
                     {
-                        question: "Oblicz: $0,5 \\cdot 0,3$",
-                        options: ["1,5", "0,15", "0,015", "15"],
-                        correctAnswer: "0,15",
-                        explanation: "Mnożymy $5 \\cdot 3 = 15$. Następnie liczymy miejsca po przecinku w obu liczbach (w 0,5 jest jedno, w 0,3 jest jedno, łącznie 1+1=2). W wyniku (15) musimy mieć 2 miejsca po przecinku, stąd 0,15."
+                        question: "Oblicz w pamięci: $0,6 \\cdot 3$",
+                        options: ["1,8", "0,18", "18", "0,018"],
+                        correctAnswer: "1,8",
+                        explanation: "Mnożymy $6 \\cdot 3 = 18$. W $0,6$ jest jedno miejsce po przecinku, więc w wyniku też musi być jedno. Otrzymujemy $1,8$."
                     },
                     {
-                        question: "Oblicz: $1,2 \\cdot 0,4$",
-                        options: ["4,8", "0,48", "0,048", "48"],
-                        correctAnswer: "0,48",
-                        explanation: "Mnożymy $12 \\cdot 4 = 48$. W obu liczbach łącznie są 2 miejsca po przecinku (jedno w 1,2 i jedno w 0,4). Dlatego wynik to 0,48."
-                    },
-                    {
-                        question: "Oblicz: $(0,2)^2$",
-                        options: ["0,4", "0,04", "0,004", "4"],
+                        question: "Ile to jest $0,2 \\cdot 0,2$?",
+                        options: ["0,4", "0,04", "4", "0,02"],
                         correctAnswer: "0,04",
-                        explanation: "To jest to samo co $0,2 \\cdot 0,2$. Mnożymy $2 \\cdot 2 = 4$. Łącznie mamy 2 miejsca po przecinku, więc wynik to 0,04.",
+                        explanation: "Mnożymy $2 \\cdot 2 = 4$. W obu czynnikach ($0,2$ i $0,2$) jest łącznie $1+1=2$ miejsca po przecinku. Musimy 'cofnąć' przecinek o 2 miejsca. $4 \rightarrow 0,4 \rightarrow 0,04$."
+                    },
+                    {
+                        question: "Ile kosztuje $4,5$ kg jabłek, jeśli $1$ kg kosztuje 3,50 zł?",
+                        options: ["15,75 zł", "14,75 zł", "15,25 zł", "14,50 zł"],
+                        correctAnswer: "15,75 zł",
+                        explanation: "Musimy pomnożyć $4,5 \\cdot 3,50$. Najłatwiej zrobić to pisemnie.",
                         visualExplanation: `
-                            <p>$0,2^2 = 0,2 \cdot 0,2$</p>
-                            <p>$2 \cdot 2 = 4$</p>
-                            <p>Liczba miejsc po przecinku: 1 + 1 = 2</p>
-                            <p>Wynik: $0,04$</p>
+                            <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
+  4,5   (1 miejsce po przecinku)
+x 3,5   (1 miejsce po przecinku)
+-----
+  225
++1350
+-----
+ 15,75  (1+1 = 2 miejsca po przecinku)
+                            </pre>
+                            <p>Koszt to 15,75 zł.</p>
                         `
                     },
                     {
-                        question: "Ile kosztuje $4,5$ kg jabłek, jeśli $1$ kg kosztuje $3,50$ zł?",
-                        options: ["$15,75$ zł", "$14,75$ zł", "$15,25$ zł", "$14,50$ zł"],
-                        correctAnswer: "$15,75$ zł",
+                        question: "Oblicz pisemnie: $8,5 \\cdot 4,2$",
+                        options: ["35,7", "357", "3,57", "34,7"],
+                        correctAnswer: "35,7",
+                        explanation: "Mnożymy jak liczby $85 \\cdot 42 = 3570$. W obu czynnikach ($8,5$ i $4,2$) jest łącznie $1+1=2$ miejsca po przecinku. W wyniku ($35,70$) też muszą być dwa miejsca. Końcowe zero można pominąć.",
+                        visualExplanation: "<pre class='text-left text-lg p-4 bg-gray-100 rounded-lg font-mono'>   8,5  (1 m.)\n x 4,2  (1 m.)\n-----\n   170\n+ 3400\n-----\n 35,70 (2 m.)</pre>"
+                    }
+                ]
+            },
+            {
+                sectionTitle: "Część 2: Mnożenie Ułamków Dziesiętnych",
+                nextSectionTopic: "Dzielenie Ułamków Dziesiętnych",
+                questions: [
+                    {
+                        question: "Oblicz: $0,8 \\cdot 100$",
+                        options: ["0,08", "8", "80", "800"],
+                        correctAnswer: "80",
+                        explanation: "Mnożąc przez 100 (które ma 2 zera), przesuwamy przecinek o 2 miejsca w prawo.",
+                        visualExplanation: `
+                            <p class="text-lg font-mono">
+                                $0,8 \cdot 100 = 0,8\\underline{\hspace{0.2em}}\\underline{\hspace{0.2em}} \rightarrow 80$
+                            </p>
+                            <p>Przesuwamy przecinek o 2 miejsca w prawo. Puste miejsce uzupełniamy zerem.</p>
+                        `
+                    },
+                    {
+                        question: "Ile kosztuje $4,5$ kg jabłek, jeśli $1$ kg kosztuje 3,50 zł?",
+                        options: ["15,75 zł", "14,75 zł", "15,25 zł", "14,50 zł"],
+                        correctAnswer: "15,75 zł",
                         explanation: "Musimy pomnożyć $4,5 \\cdot 3,50$. Najłatwiej zrobić to pisemnie.",
                         visualExplanation: `
                             <pre class="text-left text-lg p-4 bg-gray-100 rounded-lg font-mono">
@@ -567,10 +594,11 @@ x 3,5   (1 miejsce po przecinku)
             questionText.textContent = question.question;
             optionsContainer.innerHTML = '';
             
-            question.options.forEach(optionText => {
+            question.options.forEach((optionText, index) => {
+                const prefix = String.fromCharCode(97 + index); // 97 to 'a'
                 const button = document.createElement('button');
-                button.className = 'option-btn';
-                button.textContent = optionText;
+                button.className = 'option-btn text-left pl-8'; // Wyrównaj do lewej i dodaj wcięcie
+                button.textContent = `${prefix}) ${optionText}`;
                 button.onclick = () => selectOption(button, optionText);
                 optionsContainer.appendChild(button);
             });
